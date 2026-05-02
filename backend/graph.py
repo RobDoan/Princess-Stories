@@ -1,0 +1,103 @@
+import time
+from functools import wraps
+
+from langgraph.graph import StateGraph, END
+from backend.state import RoyalStateOptional
+from backend.nodes.fetch_brief import fetch_brief
+from backend.nodes.extract_memories import extract_memories
+from backend.nodes.classify_tone import classify_tone
+from backend.nodes.load_persona import load_persona
+from backend.nodes.fetch_memories import fetch_memories
+from backend.nodes.generate_story import generate_story
+from backend.nodes.infer_situation import infer_situation
+from backend.nodes.generate_life_lesson import generate_life_lesson
+from backend.nodes.synthesize_voice import synthesize_voice
+from backend.nodes.store_result import store_result
+from backend.utils.metrics import langgraph_node_duration
+
+
+def _time_node(node_name: str):
+    def deco(fn):
+        @wraps(fn)
+        def wrapper(state, *args, **kwargs):
+            story_type = state.get("story_type") or "unknown"
+            start = time.perf_counter()
+            try:
+                return fn(state, *args, **kwargs)
+            finally:
+                langgraph_node_duration.labels(
+                    node=node_name, story_type=story_type
+                ).observe(time.perf_counter() - start)
+        return wrapper
+    return deco
+
+
+def route_story_type(state: RoyalStateOptional) -> str:
+    return state["story_type"]
+
+def build_graph():
+    graph = StateGraph(RoyalStateOptional)
+    graph.add_node("fetch_brief", _time_node("fetch_brief")(fetch_brief))
+    graph.add_node("extract_memories", _time_node("extract_memories")(extract_memories))
+    graph.add_node("classify_tone", _time_node("classify_tone")(classify_tone))
+    graph.add_node("load_persona", _time_node("load_persona")(load_persona))
+    graph.add_node("fetch_memories", _time_node("fetch_memories")(fetch_memories))
+    graph.add_node("generate_story", _time_node("generate_story")(generate_story))
+    graph.add_node("infer_situation", _time_node("infer_situation")(infer_situation))
+    graph.add_node("generate_life_lesson", _time_node("generate_life_lesson")(generate_life_lesson))
+    graph.add_node("synthesize_voice", _time_node("synthesize_voice")(synthesize_voice))
+    graph.add_node("store_result", _time_node("store_result")(store_result))
+
+    graph.set_entry_point("fetch_brief")
+    graph.add_edge("fetch_brief", "extract_memories")
+    graph.add_edge("extract_memories", "classify_tone")
+    graph.add_edge("classify_tone", "load_persona")
+    graph.add_edge("load_persona", "fetch_memories")
+    graph.add_conditional_edges(
+        "fetch_memories",
+        route_story_type,
+        {"daily": "generate_story", "life_lesson": "infer_situation"},
+    )
+    graph.add_edge("generate_story", "synthesize_voice")
+    graph.add_edge("infer_situation", "generate_life_lesson")
+    graph.add_edge("generate_life_lesson", "synthesize_voice")
+    graph.add_edge("synthesize_voice", "store_result")
+    graph.add_edge("store_result", END)
+
+    return graph.compile()
+
+def build_pre_tts_graph():
+    """Pipeline up through story generation, stopping before TTS + persistence.
+
+    Used by GET /story/stream so the endpoint can take over synthesis and
+    streaming manually.
+    """
+    graph = StateGraph(RoyalStateOptional)
+    graph.add_node("fetch_brief", _time_node("fetch_brief")(fetch_brief))
+    graph.add_node("extract_memories", _time_node("extract_memories")(extract_memories))
+    graph.add_node("classify_tone", _time_node("classify_tone")(classify_tone))
+    graph.add_node("load_persona", _time_node("load_persona")(load_persona))
+    graph.add_node("fetch_memories", _time_node("fetch_memories")(fetch_memories))
+    graph.add_node("generate_story", _time_node("generate_story")(generate_story))
+    graph.add_node("infer_situation", _time_node("infer_situation")(infer_situation))
+    graph.add_node("generate_life_lesson", _time_node("generate_life_lesson")(generate_life_lesson))
+
+    graph.set_entry_point("fetch_brief")
+    graph.add_edge("fetch_brief", "extract_memories")
+    graph.add_edge("extract_memories", "classify_tone")
+    graph.add_edge("classify_tone", "load_persona")
+    graph.add_edge("load_persona", "fetch_memories")
+    graph.add_conditional_edges(
+        "fetch_memories",
+        route_story_type,
+        {"daily": "generate_story", "life_lesson": "infer_situation"},
+    )
+    graph.add_edge("generate_story", END)
+    graph.add_edge("infer_situation", "generate_life_lesson")
+    graph.add_edge("generate_life_lesson", END)
+
+    return graph.compile()
+
+
+royal_graph = build_graph()
+pre_tts_graph = build_pre_tts_graph()

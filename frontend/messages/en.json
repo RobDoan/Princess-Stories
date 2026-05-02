@@ -1,0 +1,71 @@
+{
+  "app": {
+    "title": "The Royal Dispatch",
+    "greeting": "Good evening, Princess Emma",
+    "subtitle": "Your letters have arrived",
+    "error":"{princess}'s letter is on its way — try again in a moment 💌",
+    "playing": "Playing {princess}'s letter to Emma...",
+    "writing": "{princess} is writing your letter...",
+    "goBack": "Go Back",
+    "sorryMessages": {
+      "elsa": "Elsa got caught in a snowstorm in Arendelle... ❄️ Try again in a little while!",
+      "belle": "Belle is lost in her favourite book right now 📚 She'll be back soon!",
+      "cinderella": "Cinderella is at the royal ball tonight 👠 Try again in a moment!",
+      "ariel": "Ariel is swimming with the dolphins and can't come to the surface 🐠 Try again soon!",
+      "rapunzel": "Rapunzel's lanterns blew out in the wind 🌻 She'll light them again soon!",
+      "moana": "Moana is sailing beyond the reef right now 🌊 She'll be back soon!",
+      "raya": "Raya is on a mission across Kumandra 🐉 Try again in a little while!",
+      "mirabel": "Mirabel is fixing a crack in the casita 🦋 She'll be back soon!",
+      "chase": "Chase is on a rescue mission in Adventure Bay 🐕 Try again soon!",
+      "marshall": "Marshall tripped over his own paws again 🔥 He'll be back up soon!",
+      "skye": "Skye is flying through the clouds right now ✈️ She'll land soon!",
+      "rubble": "Rubble is building something amazing 🏗️ He'll be back soon!"
+    },
+    "origins": {
+      "elsa": "Kingdom of Arendelle",
+      "belle": "The Enchanted Castle",
+      "cinderella": "The Royal Palace",
+      "ariel": "Under the Sea",
+      "rapunzel": "Kingdom of Corona",
+      "moana": "Motunui Island",
+      "raya": "Kumandra",
+      "mirabel": "The Encanto",
+      "chase": "Adventure Bay",
+      "marshall": "Adventure Bay",
+      "skye": "Adventure Bay",
+      "rubble": "Adventure Bay"
+    }
+  },
+  "story": {
+    "title": "Story",
+    "royalChallenge": "Your Royal Challenge",
+    "writing": "{princess} is crafting your life lesson..."
+  },
+  "pickChild": {
+    "heading": "Who's reading tonight?",
+    "subheading": "Tap your name to begin"
+  },
+  "onboarding": {
+    "favoritesCount": "{selected} / {max} selected",
+    "favoritesEmptyHint": "shows all",
+    "headingNew": "Your Family",
+    "headingEdit": "Edit Your Family",
+    "subheading": "Tell us about your children",
+    "yourName": "Your name",
+    "childName": "Child name",
+    "favoriteCharacters": "Favorite characters",
+    "addChild": "Add Child",
+    "remove": "Remove",
+    "saving": "Saving...",
+    "saveAndContinue": "Save & Continue",
+    "cancel": "Cancel",
+    "confirmRemove": "Remove",
+    "confirmRemoveTitle": "Remove child?",
+    "confirmRemoveBody": "Remove {name}? Their saved memories will be deleted and past stories will be hidden.",
+    "errParentNameRequired": "Please enter your name",
+    "errChildNameRequired": "Please enter the child's name",
+    "errNoChildren": "Add at least one child",
+    "errExpired": "Your link has expired. Type /register in Telegram for a new one.",
+    "errGeneric": "Something went wrong. Please try again."
+  }
+}

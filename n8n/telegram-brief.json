@@ -1,0 +1,299 @@
+{
+  "name": "Telegram Brief",
+  "nodes": [
+    {
+      "parameters": {
+        "updates": [
+          "message"
+        ],
+        "additionalFields": {}
+      },
+      "id": "4456fa49-618d-4440-b814-d986ac7a780f",
+      "name": "Telegram Trigger",
+      "type": "n8n-nodes-base.telegramTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        6560,
+        2816
+      ],
+      "webhookId": "a7ff9931-05b7-4b30-a6fa-35ffa5bbf83c",
+      "credentials": {
+        "telegramApi": {
+          "id": "6b9KM3MrqkX0lsLl",
+          "name": "Telegram account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 1
+                },
+                "conditions": [
+                  {
+                    "id": "2945910e-2d71-4f1b-a4eb-0737ac8a5889",
+                    "leftValue": "={{ $json.message.text }}",
+                    "rightValue": "/register",
+                    "operator": {
+                      "type": "string",
+                      "operation": "startsWith"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              }
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      },
+      "id": "fcc9d76b-aaf1-43ad-b8f9-d66898e30af1",
+      "name": "Command Router",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3,
+      "position": [
+        6784,
+        2816
+      ]
+    },
+    {
+      "parameters": {
+        "url": "={{ $env.THE_ROYAL_DISPATCH_API_URL }}/user/by-chat-id?chat_id={{ $json.message.chat.id }}",
+        "options": {
+          "response": {
+            "response": {
+              "fullResponse": true
+            }
+          }
+        }
+      },
+      "id": "5dea1e43-6722-421a-b165-e228dc83e69c",
+      "name": "Lookup User",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        7008,
+        2912
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.statusCode }}",
+              "rightValue": 200,
+              "operator": {
+                "type": "number",
+                "operation": "equals"
+              }
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "a47d507c-ae30-4537-a548-05e03407b29b",
+      "name": "Sender Filter",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2,
+      "position": [
+        7232,
+        2912
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.THE_ROYAL_DISPATCH_API_URL }}/brief",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ text: $('Telegram Trigger').first().json.message.text, user_id: $json.body.user_id}) }}",
+        "options": {}
+      },
+      "id": "f981e8f3-beb8-4e7b-8c8e-e9e200763aa9",
+      "name": "Post Brief (text)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        7456,
+        2912
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.THE_ROYAL_DISPATCH_API_URL }}/user/register-link",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "X-N8N-Secret",
+              "value": "={{ $env.N8N_SHARED_SECRET }}"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ telegram_chat_id: $('Telegram Trigger').first().json.message.chat.id }) }}",
+        "options": {}
+      },
+      "id": "4fd06a1f-935e-426a-a1e1-d76cf97cebfa",
+      "name": "Get Onboarding Link",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        7008,
+        2720
+      ]
+    },
+    {
+      "parameters": {
+        "chatId": "={{ $('Telegram Trigger').first().json.message.chat.id }}",
+        "text": "Set up or edit your family here: ",
+        "replyMarkup": "inlineKeyboard",
+        "inlineKeyboard": {
+          "rows": []
+        },
+        "additionalFields": {}
+      },
+      "id": "7ba7f681-0843-4564-bb03-148eae034783",
+      "name": "Reply With Link",
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [
+        7232,
+        2720
+      ],
+      "webhookId": "2f38d428-1806-4c23-9556-0fff13cc3c9f",
+      "credentials": {
+        "telegramApi": {
+          "id": "6b9KM3MrqkX0lsLl",
+          "name": "Telegram account"
+        }
+      }
+    }
+  ],
+  "pinData": {
+    "Telegram Trigger": [
+      {
+        "json": {
+          "update_id": 168668997,
+          "message": {
+            "message_id": 20,
+            "from": {
+              "id": 5863873556,
+              "is_bot": false,
+              "first_name": "Quy",
+              "last_name": "Doan",
+              "language_code": "en"
+            },
+            "chat": {
+              "id": 5863873556,
+              "first_name": "Quy",
+              "last_name": "Doan",
+              "type": "private"
+            },
+            "date": 1776201498,
+            "text": "Emma turn off all light before go to bed last night"
+          }
+        },
+        "pairedItem": {
+          "item": 0
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Telegram Trigger": {
+      "main": [
+        [
+          {
+            "node": "Command Router",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Command Router": {
+      "main": [
+        [
+          {
+            "node": "Get Onboarding Link",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Lookup User",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lookup User": {
+      "main": [
+        [
+          {
+            "node": "Sender Filter",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Sender Filter": {
+      "main": [
+        [
+          {
+            "node": "Post Brief (text)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    },
+    "Get Onboarding Link": {
+      "main": [
+        [
+          {
+            "node": "Reply With Link",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "timeSavedPerExecution": 0
+  },
+  "versionId": "e4270950-7728-425a-a19a-d8595cbba5e0",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "723c281fb6a3a550548cac1fa9b115e752a52dd8bb3fd87319d99f45a111adff"
+  },
+  "id": "rPeGAbeAeYJg8I76",
+  "tags": []
+}
