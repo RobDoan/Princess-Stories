@@ -26,7 +26,7 @@ _DETECT_SYSTEM = (
 )
 
 
-def detect_children_in_brief(brief_text: str, child_names: list[str]) -> list[str]:
+def detect_children_in_brief(brief_text: str, child_names: list[str], config: dict | None = None) -> list[str]:
     """Return the subset of child_names mentioned in brief_text, using an LLM."""
     if not child_names:
         return []
@@ -37,7 +37,7 @@ def detect_children_in_brief(brief_text: str, child_names: list[str]) -> list[st
             response = llm.invoke([
                 SystemMessage(content=_DETECT_SYSTEM),
                 HumanMessage(content=prompt),
-            ])
+            ], config=config)
             external_api_calls.labels(provider="anthropic", outcome="ok").inc()
         except Exception:
             external_api_calls.labels(provider="anthropic", outcome="error").inc()

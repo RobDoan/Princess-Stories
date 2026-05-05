@@ -18,6 +18,7 @@ from backend.nodes.store_result import store_result_from_bytes
 from backend.nodes.synthesize_voice import synthesize_voice_stream
 from backend.utils.child_detection import detect_children_in_brief
 from backend.utils.metrics import story_generation_seconds
+from backend.utils.langfuse import get_langfuse_callback
 from backend.utils.time_utils import get_logical_date_iso
 
 logger = logging.getLogger(__name__)
@@ -102,7 +103,15 @@ def post_brief(req: BriefRequest):
     else:
         child_names = [row[1] for row in children]
         try:
-            matched_names = detect_children_in_brief(req.text, child_names)
+            langfuse_handler = get_langfuse_callback()
+            config = {
+                "callbacks": [langfuse_handler] if langfuse_handler else [],
+                "metadata": {
+                    "langfuse_user_id": req.user_id,
+                    "langfuse_tags": ["child_detection"],
+                }
+            }
+            matched_names = detect_children_in_brief(req.text, child_names, config=config)
         except Exception:
             logger.warning("post_brief: child detection failed, storing with child_id=None", exc_info=True)
             matched_names = []
@@ -216,6 +225,7 @@ async def generate_story_sse(
     story_type: Literal["daily", "life_lesson"] = "daily",
     timezone: str = "America/Los_Angeles",
     child_id: str | None = None,
+    user_id: str | None = None,
 ):
     """SSE endpoint: streams generation progress so the frontend can show
     story text immediately when the LLM finishes (before TTS)."""
@@ -269,7 +279,16 @@ async def generate_story_sse(
 
         _story_gen_start = time.perf_counter()
         try:
-            pre_state = await asyncio.to_thread(pre_tts_graph.invoke, initial_state)
+            langfuse_handler = get_langfuse_callback()
+            config = {
+                "callbacks": [langfuse_handler] if langfuse_handler else [],
+                "metadata": {
+                    "langfuse_user_id": user_id,
+                    "langfuse_session_id": generation_id,
+                    "langfuse_tags": [princess, language, story_type],
+                }
+            }
+            pre_state = await asyncio.to_thread(pre_tts_graph.invoke, initial_state, config=config)
         except Exception:
             logger.exception("Story generation failed")
             yield "event: error\ndata: generation_failed\n\n"
@@ -291,6 +310,8 @@ async def generate_story_sse(
         }
         if child_id:
             params_dict["child_id"] = child_id
+        if user_id:
+            params_dict["user_id"] = user_id
         base = os.environ["BACKEND_PUBLIC_URL"].rstrip("/")
         audio_url = f"{base}/story/stream?{urlencode(params_dict)}"
 
@@ -311,6 +332,7 @@ async def get_story_stream(
     story_type: Literal["daily", "life_lesson"],
     timezone: str,
     child_id: str | None = None,
+    user_id: str | None = None,
     generation_id: str | None = None,
 ):
     # Re-check the cache: if it filled between POST and GET, redirect to S3.
@@ -339,7 +361,16 @@ async def get_story_stream(
         }
         _story_gen_start = time.perf_counter()
         try:
-            pre_state = await asyncio.to_thread(pre_tts_graph.invoke, initial_state)
+            langfuse_handler = get_langfuse_callback()
+            config = {
+                "callbacks": [langfuse_handler] if langfuse_handler else [],
+                "metadata": {
+                    "langfuse_user_id": user_id,
+                    "langfuse_session_id": generation_id or str(uuid4()),
+                    "langfuse_tags": [princess, language, story_type],
+                }
+            }
+            pre_state = await asyncio.to_thread(pre_tts_graph.invoke, initial_state, config=config)
         finally:
             story_generation_seconds.labels(
                 story_type=initial_state.get("story_type", "daily")
@@ -350,6 +381,7 @@ async def get_story_stream(
         media_type="audio/mpeg",
         headers={"Cache-Control": "no-store"},
     )
+
 
 
 @router.get("/story/today")
